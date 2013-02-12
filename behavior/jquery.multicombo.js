@@ -1,4 +1,4 @@
-/*
+/**
  * jQuery Multicombo v0.1 - by @koosvdkolk
  *
  * Transforms select lists into searchable combo lists
@@ -8,7 +8,7 @@
  * Copyright (c) 2013 Koos van der Kolk https://github.com/koosvanderkolk
  * Dual licensed under the MIT and GPL licenses (same as jQuery).
  * http://docs.jquery.com/License
- */
+ **/
 (function($) {
   $.multicombo = function(select, options) {
     var defaults = {
