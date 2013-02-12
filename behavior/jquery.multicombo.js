@@ -50,7 +50,6 @@
     plugin.init = function() {
       var $tr;
 
-
       /* create ui
       */
 
@@ -130,240 +129,293 @@
       $rightExpandButton.click(function(){
         resizeSelect('right');
       });
+    }
 
-      /**
-      * Makes sure the width of the search input equals that of the selects
-      **/
-      function resetSearchWidth () {
-        $leftSearch.width($leftSelect.width()-$leftExpandButton.width()-5);
-        $rightSearch.width($rightSelect.width()-$rightExpandButton.width()-5);
-      }
+    /**
+     * Gets or sets the value of the combo
+     * @param array values (optional) An array of values. If omitted, the
+     *                       function returns the currently selected values
+     **/
+    plugin.val = function(values) {
+      var i=0, numberOfRightSelectOptions, returnArray = [];
+      var currentLeftFilterText, currentRightFilterText;
 
-      /**
-      * Adds events etc to an option in the select. Should be called for each
-      *   option
-      * @param object $option A jQuerified option
-      **/
-      function enhanceOption($option) {
-        /* add events
-        */
+      if (values===undefined) {
+        if (rightSelectOptionsData !== undefined) {
+          numberOfRightSelectOptions = rightSelectOptionsData.length;
+          for (i=0; i<numberOfRightSelectOptions; i++) {
+            returnArray.push(rightSelectOptionsData[i].value);
+          }
+        }
+      } else {
+        //clear filters
+        currentLeftFilterText = $leftSearch.val();
+        filterSelect('', 'left');
 
-        /* double click */
-        $option.dblclick(function() {
-          parent = $(this).parent()[0];
-          target = parent === $leftSelect[0] ? 'right' : 'left';
-          moveSelectOptions(target);
+        currentRightFilterText = $rightSearch.val();
+        filterSelect('', 'right');
+
+        //select and move options from right to left
+        $rightSelect.val(values);
+        $rightSelect.children().each(function(){
+          var $option = jQuery(this);
+
+          //inverse selection
+          if ($option.attr('selected') === true || $option.attr('selected') === 'selected') {
+            $option.removeAttr('selected');
+          }else{
+            $option.attr('selected', 'selected');
+          }
         });
+        moveSelectOptions('left');
+
+        //select and move options from left to right
+        $leftSelect.val(values);
+        moveSelectOptions('right');
+
+        //reset filters
+        $leftSearch.val(currentLeftFilterText);
+        filterSelect(currentLeftFilterText, 'left');
+
+        $rightSearch.val(currentRightFilterText);
+        filterSelect(currentRightFilterText, 'right');
       }
 
-      /**
-      * Moves selected options to the other select list
-      * @param string target The target select: 'left' or 'right'
-      **/
-      function moveSelectOptions(target) {
-        var i, data;
 
-        /* get select boxes and data */
-        var selectData = getSelect(target);
-        var $optionsToMove = selectData.sourceSelect.children(':selected');
-        var targetData = selectData.targetData;
-        var td_length = targetData.length;
-        var sourceData = selectData.sourceData;
-        var sd_length = sourceData.length;
 
-        /* move the options and update data */
-        $optionsToMove.each(function(){
-          var $option = $(this);
-          var value = $option.val();
-          var index = $option.data('multicombo.index');
-          var text  = $option.text();
-          var moved = false;
+      return returnArray;
+    }
 
-          /* move option */
-          addSelectOption($option, target);
-          $option.removeAttr('selected');
+    /**
+     * Makes sure the width of the search input equals that of the selects
+     **/
+    function resetSearchWidth () {
+      $leftSearch.width($leftSelect.width()-$leftExpandButton.width()-5);
+      $rightSearch.width($rightSelect.width()-$rightExpandButton.width()-5);
+    }
 
-          /* update data (used for search) */
+    /**
+     * Adds events etc to an option in the select. Should be called for each
+     *   option
+     * @param object $option A jQuerified option
+     **/
+    function enhanceOption($option) {
+      /* add events
+       */
 
-          //remove it from source
-          for (i=0; i<sd_length; i++) {
-            if (sourceData[i].value === value) {
-              sourceData.splice(i, 1);
+      /* double click */
+      $option.dblclick(function() {
+        parent = $(this).parent()[0];
+        target = parent === $leftSelect[0] ? 'right' : 'left';
+        moveSelectOptions(target);
+      });
+    }
+
+    /**
+     * Moves selected options to the other select list
+     * @param string target The target select: 'left' or 'right'
+     **/
+    function moveSelectOptions(target) {
+      var i, data;
+
+      /* get select boxes and data */
+      var selectData = getSelect(target);
+      var $optionsToMove = selectData.sourceSelect.children(':selected');
+      var targetData = selectData.targetData;
+      var td_length = targetData.length;
+      var sourceData = selectData.sourceData;
+      var sd_length = sourceData.length;
+
+      /* move the options and update data */
+      $optionsToMove.each(function(){
+        var $option = $(this);
+        var value = $option.val();
+        var index = $option.data('multicombo.index');
+        var text  = $option.text();
+        var moved = false;
+
+        /* move option */
+        addSelectOption($option, target);
+        $option.removeAttr('selected');
+
+        /* update data (used for search) */
+
+        //remove it from source
+        for (i=0; i<sd_length; i++) {
+          if (sourceData[i].value === value) {
+            sourceData.splice(i, 1);
+            break;
+          }
+        }
+
+        //add it to target
+        data = {
+          "value": value,
+          "text": text,
+          "index": index
+        };
+        if (td_length>0) {
+          for (i=0; i<td_length; i++) {
+
+            if (targetData[i].index > index) {
+              targetData.splice(i, 0, data);
+
+              moved = true;
               break;
             }
           }
-
-          //add it to target
-          data = {
-            "value": value,
-            "text": text,
-            "index": index
-          };
-          if (td_length>0) {
-            for (i=0; i<td_length; i++) {
-
-              if (targetData[i].index > index) {
-                targetData.splice(i, 0, data);
-
-                moved = true;
-                break;
-              }
-            }
-          }
-
-          if (td_length === 0 || moved === false){
-            targetData.push(data);
-          }
-        });
-      }
-
-      /**
-       * Helper function: Returns both select boxes and data, either as source
-       *   or as target parameter
-       * @param string targetName Which select box will be the target
-       * @return object {"targetSelect": [jquerified select object],
-       *                 "sourceSelect": [jquerified select object],
-       *                 "targetData"  : object
-       *                 "sourceData"  : object}
-       **/
-      function getSelect(targetName) {
-        var $target, $source, targetData, sourceData;
-
-        if (targetName === "left") {
-          $target = $leftSelect;
-          $source = $rightSelect;
-          targetData = leftSelectOptionsData;
-          sourceData = rightSelectOptionsData;
-        } else {
-          $target = $rightSelect;
-          $source = $leftSelect;
-          targetData = rightSelectOptionsData;
-          sourceData = leftSelectOptionsData;
         }
 
-        return {
-          "targetSelect": $target,
-          "sourceSelect": $source,
-          "targetData": targetData,
-          "sourceData": sourceData
-        };
+        if (td_length === 0 || moved === false){
+          targetData.push(data);
+        }
+      });
+    }
+
+    /**
+     * Helper function: Returns both select boxes and data, either as source
+     *   or as target parameter
+     * @param string targetName Which select box will be the target
+     * @return object {"targetSelect": [jquerified select object],
+     *                 "sourceSelect": [jquerified select object],
+     *                 "targetData"  : object
+     *                 "sourceData"  : object}
+     **/
+    function getSelect(targetName) {
+      var $target, $source, targetData, sourceData;
+
+      if (targetName === "left") {
+        $target = $leftSelect;
+        $source = $rightSelect;
+        targetData = leftSelectOptionsData;
+        sourceData = rightSelectOptionsData;
+      } else {
+        $target = $rightSelect;
+        $source = $leftSelect;
+        targetData = rightSelectOptionsData;
+        sourceData = leftSelectOptionsData;
       }
 
-      /**
-       * Adds an option to a select
-       * @param object $sourceOption A jQuerified option object
-       * @param string target Name of the target select: 'left' or 'right'
-       * @param boolean ignoreIndex If true, the index will not be use to
-       *                              determine the order of the options.
-       **/
-      function addSelectOption($sourceOption, target, ignoreIndex) {
-        ignoreIndex = ignoreIndex === undefined ? false : ignoreIndex;
-        var moved = false;
-        var $targetOptions, sourceOptionIndex, $targetOption;
-        var selectData = getSelect(target);
-        var $targetSelect = selectData.targetSelect;
+      return {
+        "targetSelect": $target,
+        "sourceSelect": $source,
+        "targetData": targetData,
+        "sourceData": sourceData
+      };
+    }
 
-        if (ignoreIndex === false) {
-          $targetOptions = $targetSelect.children();
+    /**
+     * Adds an option to a select
+     * @param object $sourceOption A jQuerified option object
+     * @param string target Name of the target select: 'left' or 'right'
+     * @param boolean ignoreIndex If true, the index will not be use to
+     *                              determine the order of the options.
+     **/
+    function addSelectOption($sourceOption, target, ignoreIndex) {
+      ignoreIndex = ignoreIndex === undefined ? false : ignoreIndex;
+      var moved = false;
+      var $targetOptions, sourceOptionIndex, $targetOption;
+      var selectData = getSelect(target);
+      var $targetSelect = selectData.targetSelect;
 
-          sourceOptionIndex = $sourceOption.data('multicombo.index');
+      if (ignoreIndex === false) {
+        $targetOptions = $targetSelect.children();
 
-          $targetOptions.each(function() {
-            var $targetOption = $(this);
-            if ($(this).data('multicombo.index') > sourceOptionIndex) {
-              $sourceOption.insertBefore($targetOption);
-              moved = true;
-              return false;
-            }
-          });
+        sourceOptionIndex = $sourceOption.data('multicombo.index');
 
-          if (moved === false) {
-            $targetSelect.append($sourceOption);
+        $targetOptions.each(function() {
+          var $targetOption = $(this);
+          if ($(this).data('multicombo.index') > sourceOptionIndex) {
+            $sourceOption.insertBefore($targetOption);
+            moved = true;
+            return false;
           }
-        } else {
+        });
+
+        if (moved === false) {
           $targetSelect.append($sourceOption);
         }
+      } else {
+        $targetSelect.append($sourceOption);
+      }
+    }
+
+    /**
+     * Resizes the select
+     * @param string target Name of the select: 'left' or 'right'
+     **/
+    function resizeSelect(target) {
+      var expand;
+      var selectData = getSelect(target);
+      var $targetSelect = selectData.targetSelect;
+      var $sourceSelect = selectData.sourceSelect;
+
+      if ($targetSelect.data('multicombo.expanded')===true) {
+        expand = false;
+      } else {
+        expand = true;
       }
 
-      /**
-       * Resizes the select
-       * @param string target Name of the select: 'left' or 'right'
-       **/
-      function resizeSelect(target) {
-        var expand;
-        var selectData = getSelect(target);
-        var $targetSelect = selectData.targetSelect;
-        var $sourceSelect = selectData.sourceSelect;
+      var deltaWidth = plugin.settings.selectWidth / 2;
+      if (expand === true) {
+        $targetSelect.attr("size", plugin.settings.expandedSelectSize);
+        $sourceSelect.attr("size", plugin.settings.expandedSelectSize);
+        $targetSelect.width($targetSelect.width()+deltaWidth);
+        $sourceSelect.width($sourceSelect.width()-deltaWidth);
 
-        if ($targetSelect.data('multicombo.expanded')===true) {
-          expand = false;
-        } else {
-          expand = true;
+        $targetSelect.data('multicombo.expanded', true);
+      }else{
+        $targetSelect.attr("size", plugin.settings.defaultSelectSize);
+        $sourceSelect.attr("size", plugin.settings.defaultSelectSize);
+        $targetSelect.width($targetSelect.width()-deltaWidth);
+        $sourceSelect.width($sourceSelect.width()+deltaWidth);
+
+        $targetSelect.data('multicombo.expanded', false);
+      }
+
+      resetSearchWidth();
+    }
+
+    /**
+     * Filters the option in a select
+     * @param string text The text used as filter
+     * @param string target The target select
+     **/
+    function filterSelect(text, target) {
+      var optionsData, $targetSelect, value, option;
+      var search = $.trim(text);
+      var regex = new RegExp(search,'gi');
+
+      var selectData = getSelect(target);
+      $targetSelect = selectData.targetSelect;
+      optionsData   = selectData.targetData;
+
+      /* empty target select */
+      $targetSelect.empty().scrollTop(0);
+
+      /* add options which match text */
+      $.each(optionsData, function(i) {
+        var option = optionsData[i];
+        if(option.text.match(regex) !== null) {
+          $option = $('<option>').text(option.text).val(option.value).data('multicombo.index',option.index);
+
+          /* enhance it, add it */
+          enhanceOption($option);
+          addSelectOption($option, target, true);
         }
+      });
+    }
 
-        var deltaWidth = plugin.settings.selectWidth / 2;
-        if (expand === true) {
-          $targetSelect.attr("size", plugin.settings.expandedSelectSize);
-          $sourceSelect.attr("size", plugin.settings.expandedSelectSize);
-          $targetSelect.width($targetSelect.width()+deltaWidth);
-          $sourceSelect.width($sourceSelect.width()-deltaWidth);
-
-          $targetSelect.data('multicombo.expanded', true);
-        }else{
-          $targetSelect.attr("size", plugin.settings.defaultSelectSize);
-          $sourceSelect.attr("size", plugin.settings.defaultSelectSize);
-          $targetSelect.width($targetSelect.width()-deltaWidth);
-          $sourceSelect.width($sourceSelect.width()+deltaWidth);
-
-          $targetSelect.data('multicombo.expanded', false);
-        }
-
-        resetSearchWidth();
-      }
-
-      /**
-       * Filters the option in a select
-       * @param string text The text used as filter
-       * @param string target The target select
-       **/
-      function filterSelect(text, target) {
-        var optionsData, $targetSelect, value, option;
-        var search = $.trim(text);
-        var regex = new RegExp(search,'gi');
-
-        var selectData = getSelect(target);
-        $targetSelect = selectData.targetSelect;
-        optionsData   = selectData.targetData;
-
-        /* empty target select */
-        $targetSelect.empty().scrollTop(0);
-
-        /* add options which match text */
-        $.each(optionsData, function(i) {
-          var option = optionsData[i];
-          if(option.text.match(regex) !== null) {
-            $option = $('<option>').text(option.text).val(option.value).data('multicombo.index',option.index);
-
-            /* enhance it, add it */
-            enhanceOption($option);
-            addSelectOption($option, target, true);
-          }
-        });
-      }
-
-
-
-    };
-/* init the plugin */
-      plugin.init();
+    /* init the plugin */
+    plugin.init();
 
   }
   $.fn.multicombo = function(options) {
-      return this.each(function() {
-        if (undefined === $(this).data('multicombo')) {
-          var plugin = new $.multicombo(this, options);
-          $(this).data('multicombo', plugin);
-        }
-      });
-    };
+    return this.each(function() {
+      if (undefined === $(this).data('multicombo')) {
+        var plugin = new $.multicombo(this, options);
+        $(this).data('multicombo', plugin);
+      }
+    });
+  };
 })(jQuery);
