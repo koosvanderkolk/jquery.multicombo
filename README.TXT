@@ -3,9 +3,13 @@
  **/
 Transforms select lists into searchable combo lists
 
+Example: http://www.in-silico.nl/multicombo/
+
 Dependencies: jQuery 1.6+
 
-Usage: call jQuery( '#mySelect').multiCombo(options);
+Usage: 
+ - call jQuery('#mySelect').multiCombo(options) to initialize
+ - call jQuery('#mySelect').data('multicombo').val(array) to get/set values (just like jQuery's val function)
 
 Where options (optional) is an object:
 
