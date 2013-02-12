@@ -3,6 +3,8 @@
  **/
 Transforms select lists into searchable combo lists
 
+Example: http://www.in-silico.nl/multicombo/
+
 Dependencies: jQuery 1.6+
 
 Usage: call jQuery( '#mySelect').multiCombo(options);
