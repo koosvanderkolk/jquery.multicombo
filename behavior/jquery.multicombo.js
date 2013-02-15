@@ -57,8 +57,6 @@
         plugin.settings.type = 'single';
         initGuiSingle();
       }
-
-
     };
 
     /**
@@ -83,37 +81,42 @@
         }
 
       } else {
-        //clear filters
-        currentLeftFilterText = $leftSearch.val();
-        filterSelect('', 'left');
+        if (plugin.settings.type === 'multiple') {
+          //clear filters
+          currentLeftFilterText = $leftSearch.val();
+          filterSelect('', 'left');
 
-        currentRightFilterText = $rightSearch.val();
-        filterSelect('', 'right');
+          currentRightFilterText = $rightSearch.val();
+          filterSelect('', 'right');
 
-        //select and move options from right to left
-        $rightSelect.val(values);
-        $rightSelect.children().each(function(){
-          var $option = jQuery(this);
+          //select and move options from right to left
+          $rightSelect.val(values);
+          $rightSelect.children().each(function(){
+            var $option = jQuery(this);
 
-          //inverse selection
-          if ($option.attr('selected') === true || $option.attr('selected') === 'selected') {
-            $option.removeAttr('selected');
-          }else{
-            $option.attr('selected', 'selected');
-          }
-        });
-        moveSelectOptions('left');
+            //inverse selection
+            if ($option.attr('selected') === true || $option.attr('selected') === 'selected') {
+              $option.removeAttr('selected');
+            }else{
+              $option.attr('selected', 'selected');
+            }
+          });
+          moveSelectOptions('left');
 
-        //select and move options from left to right
-        $leftSelect.val(values);
-        moveSelectOptions('right');
+          //select and move options from left to right
+          $leftSelect.val(values);
+          moveSelectOptions('right');
 
-        //reset filters
-        $leftSearch.val(currentLeftFilterText);
-        filterSelect(currentLeftFilterText, 'left');
+          //reset filters
+          $leftSearch.val(currentLeftFilterText);
+          filterSelect(currentLeftFilterText, 'left');
 
-        $rightSearch.val(currentRightFilterText);
-        filterSelect(currentRightFilterText, 'right');
+          $rightSearch.val(currentRightFilterText);
+          filterSelect(currentRightFilterText, 'right');
+        } else {
+          $leftSelect.val(values);
+          $leftSearch.val($leftSelect.children('[value="'+values+'"]').text());
+        }
       }
 
       return returnArray;
@@ -132,19 +135,19 @@
       $leftSelect.before($element).remove();
 
       /* fill container */
-      var $table = jQuery('<table></table>');
-      var $tbody = jQuery('<tbody></tbody>');
+      var $table = jQuery('<div></div>');
+      var $tbody = jQuery('<div></div>');
       $table.append($tbody);
 
       /* row with search inputs */
-      $tr = jQuery('<tr></tr>');
-      $tr.append( $('<td></td>').append($leftSearch, $leftExpandButton) );
+      $tr = jQuery('<div></div>');
+      $tr.append( $('<div></div>').append($leftSearch, $leftExpandButton) );
 
       $tbody.append($tr);
 
       /* row with select */
-      $selectRow = jQuery('<tr style="display:none;"></tr>');
-      $selectRow.append( $('<td></td>').append($leftSelect) );
+      $selectRow = jQuery('<div style="display:none;position:absolute; z-index:2;"></div>');
+      $selectRow.append( $('<div></div>').append($leftSelect) );
       $tbody.append($selectRow);
 
       /* append table and do some settings */
@@ -185,19 +188,19 @@
         /* check for cursor activity */
         if (e.keyCode === 38 || e.keyCode === 40) {
           /* user pressed up/down: let user move through options in select */
-          $leftSearch.data('multicombo.selectUsingCursor', true);
+          $leftSearch.data('multicombo.usingSelect', true);
           $leftSelect.focus();
         } else {
           /* user pressed other key: filter */
           filterSelect($(this).val(), 'left', true);
-          $leftSearch.data('multicombo.selectUsingCursor', false);
+          $leftSearch.data('multicombo.usingSelect', false);
         }
       });
 
       /* search focus event */
       $leftSearch.bind('focus', function(){
         $selectRow.show();
-      })
+      });
 
       /* search blur event */
       $leftSearch.bind('blur', function(){
@@ -205,23 +208,32 @@
         $leftSearch.val($leftSelect.children(':selected').text());
 
         /* hide select if user not using cursor */
-        if ($leftSearch.data('multicombo.selectUsingCursor') !== true) {
+        if ($leftSearch.data('multicombo.usingSelect') !== true) {
           $selectRow.hide();
         }
       });
 
+      $leftSelect.bind('hover', function(){
+        $leftSearch.data('multicombo.usingSelect', true);
+      });
+
+      $leftSelect.bind('mouseleave', function(){
+        $leftSearch.data('multicombo.usingSelect', false);
+      });
+
       /* select blur event */
       $leftSelect.bind('blur', function(){
-        /* emulate option click if user is using cursor */
-        if ($leftSearch.data('multicombo.selectUsingCursor') === true) {
-          $leftSelect.children(':selected').trigger('click');
+        /* set search input value */
+        if ($leftSearch.data('multicombo.usingSelect') === true) {
+          $leftSearch.val($leftSelect.children(':selected').text());
+          $selectRow.hide();
         }
       });
 
       /* select change event */
       $leftSelect.bind('change', function(){
         /* update search */
-        if ($leftSearch.data('multicombo.selectUsingCursor') === true) {
+        if ($leftSearch.data('multicombo.usingSelect') === true) {
           /* emulate option click */
           $leftSearch.val($leftSelect.children(':selected').text());
         }
@@ -351,6 +363,7 @@
         /* click */
         $option.click(function() {
           $leftSearch.val(jQuery(this).text());
+          $selectRow.hide();
         });
       }
     }
