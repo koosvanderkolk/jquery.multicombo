@@ -129,7 +129,7 @@
       $rightExpandButton.click(function(){
         resizeSelect('right');
       });
-    }
+    };
 
     /**
      * Gets or sets the value of the combo
@@ -184,7 +184,7 @@
 
 
       return returnArray;
-    }
+    };
 
     /**
      * Makes sure the width of the search input equals that of the selects
@@ -408,8 +408,8 @@
 
     /* init the plugin */
     plugin.init();
-
-  }
+  };
+  
   $.fn.multicombo = function(options) {
     return this.each(function() {
       if (undefined === $(this).data('multicombo')) {
