@@ -44,10 +44,199 @@
     var $leftExpandButton = $('<span style="width: 20px"><img src="'+plugin.settings.layoutFolder+'maximize.gif" /></span>');
     var $rightExpandButton = $leftExpandButton.clone();
 
+    var $selectRow;
+
     /**
      * Initializes the plugin
      **/
     plugin.init = function() {
+      if ($leftSelect.attr('multiple') === 'multiple' || $leftSelect.attr('multiple') === true){
+        plugin.settings.type = 'multiple';
+        initGuiMultiple();
+      } else {
+        plugin.settings.type = 'single';
+        initGuiSingle();
+      }
+
+
+    };
+
+    /**
+     * Gets or sets the value of the combo
+     * @param array values (optional) An array of values. If omitted, the
+     *                       function returns the currently selected values
+     **/
+    plugin.val = function(values) {
+      var i=0, numberOfRightSelectOptions, returnArray = [];
+      var currentLeftFilterText, currentRightFilterText;
+
+      if (values===undefined) {
+        if (plugin.settings.type === 'multiple') {
+          if (rightSelectOptionsData !== undefined) {
+            numberOfRightSelectOptions = rightSelectOptionsData.length;
+            for (i=0; i<numberOfRightSelectOptions; i++) {
+              returnArray.push(rightSelectOptionsData[i].value);
+            }
+          }
+        } else {
+          return $leftSelect.val();
+        }
+
+      } else {
+        //clear filters
+        currentLeftFilterText = $leftSearch.val();
+        filterSelect('', 'left');
+
+        currentRightFilterText = $rightSearch.val();
+        filterSelect('', 'right');
+
+        //select and move options from right to left
+        $rightSelect.val(values);
+        $rightSelect.children().each(function(){
+          var $option = jQuery(this);
+
+          //inverse selection
+          if ($option.attr('selected') === true || $option.attr('selected') === 'selected') {
+            $option.removeAttr('selected');
+          }else{
+            $option.attr('selected', 'selected');
+          }
+        });
+        moveSelectOptions('left');
+
+        //select and move options from left to right
+        $leftSelect.val(values);
+        moveSelectOptions('right');
+
+        //reset filters
+        $leftSearch.val(currentLeftFilterText);
+        filterSelect(currentLeftFilterText, 'left');
+
+        $rightSearch.val(currentRightFilterText);
+        filterSelect(currentRightFilterText, 'right');
+      }
+
+      return returnArray;
+    };
+
+    /**
+     * Inits the GUI in case of a single select
+     **/
+    function initGuiSingle () {
+      var $tr;
+
+      /* create ui
+      */
+
+      /* replace select with new container element */
+      $leftSelect.before($element).remove();
+
+      /* fill container */
+      var $table = jQuery('<table></table>');
+      var $tbody = jQuery('<tbody></tbody>');
+      $table.append($tbody);
+
+      /* row with search inputs */
+      $tr = jQuery('<tr></tr>');
+      $tr.append( $('<td></td>').append($leftSearch, $leftExpandButton) );
+
+      $tbody.append($tr);
+
+      /* row with select */
+      $selectRow = jQuery('<tr style="display:none;"></tr>');
+      $selectRow.append( $('<td></td>').append($leftSelect) );
+      $tbody.append($selectRow);
+
+      /* append table and do some settings */
+      $element.append($table);
+
+      //layout of selects
+      $leftSelect.attr({
+        "multiple": "",
+        "size": plugin.settings.defaultSelectSize
+      });
+
+      //store width of select
+      plugin.settings.selectWidth = $leftSelect.width();
+
+      //set width of search box;
+      resetSearchWidth();
+
+      //add index to left select options and store option data (for search)
+      $leftSelect.children().each(function(index, option){
+        var $option = $(option);
+        $option.data('multicombo.index', index);
+        leftSelectOptionsData.push({
+          "value": $option.val(),
+          "text": $(this).text(),
+          "index": index
+        });
+        enhanceOption($option);
+      });
+
+      /* assign functions
+       */
+
+      /* search keyboard events */
+      $leftSearch.bind('keyup', function(e){
+        /* show select */
+        $selectRow.show();
+
+        /* check for cursor activity */
+        if (e.keyCode === 38 || e.keyCode === 40) {
+          /* user pressed up/down: let user move through options in select */
+          $leftSearch.data('multicombo.selectUsingCursor', true);
+          $leftSelect.focus();
+        } else {
+          /* user pressed other key: filter */
+          filterSelect($(this).val(), 'left', true);
+          $leftSearch.data('multicombo.selectUsingCursor', false);
+        }
+      });
+
+      /* search focus event */
+      $leftSearch.bind('focus', function(){
+        $selectRow.show();
+      })
+
+      /* search blur event */
+      $leftSearch.bind('blur', function(){
+        /* get selected option value */
+        $leftSearch.val($leftSelect.children(':selected').text());
+
+        /* hide select if user not using cursor */
+        if ($leftSearch.data('multicombo.selectUsingCursor') !== true) {
+          $selectRow.hide();
+        }
+      });
+
+      /* select blur event */
+      $leftSelect.bind('blur', function(){
+        /* emulate option click if user is using cursor */
+        if ($leftSearch.data('multicombo.selectUsingCursor') === true) {
+          $leftSelect.children(':selected').trigger('click');
+        }
+      });
+
+      /* select change event */
+      $leftSelect.bind('change', function(){
+        /* update search */
+        if ($leftSearch.data('multicombo.selectUsingCursor') === true) {
+          /* emulate option click */
+          $leftSearch.val($leftSelect.children(':selected').text());
+        }
+      });
+
+      /* expand button */
+      $leftExpandButton.click(function(){
+        resizeSelect('left');
+      });
+    }
+
+    /**
+     * Inits the GUI in case of a multiple select
+     **/
+    function initGuiMultiple () {
       var $tr;
 
       /* create ui
@@ -105,10 +294,14 @@
           "text": $(this).text(),
           "index": index
         });
-        enhanceOption($option, 'left');
+        enhanceOption($option);
       });
 
-      /* assign functions */
+      /* assign functions
+       */
+
+
+
       $toLeftButton.click(function(){
         moveSelectOptions('left');
       });
@@ -116,10 +309,10 @@
         moveSelectOptions('right');
       });
 
-      $leftSearch.bind('change keyup', function(){
+      $leftSearch.bind('keyup', function(){
         filterSelect($(this).val(), 'left');
       });
-      $rightSearch.bind('change keyup', function(){
+      $rightSearch.bind('keyup', function(){
         filterSelect($(this).val(), 'right');
       });
 
@@ -129,62 +322,7 @@
       $rightExpandButton.click(function(){
         resizeSelect('right');
       });
-    };
-
-    /**
-     * Gets or sets the value of the combo
-     * @param array values (optional) An array of values. If omitted, the
-     *                       function returns the currently selected values
-     **/
-    plugin.val = function(values) {
-      var i=0, numberOfRightSelectOptions, returnArray = [];
-      var currentLeftFilterText, currentRightFilterText;
-
-      if (values===undefined) {
-        if (rightSelectOptionsData !== undefined) {
-          numberOfRightSelectOptions = rightSelectOptionsData.length;
-          for (i=0; i<numberOfRightSelectOptions; i++) {
-            returnArray.push(rightSelectOptionsData[i].value);
-          }
-        }
-      } else {
-        //clear filters
-        currentLeftFilterText = $leftSearch.val();
-        filterSelect('', 'left');
-
-        currentRightFilterText = $rightSearch.val();
-        filterSelect('', 'right');
-
-        //select and move options from right to left
-        $rightSelect.val(values);
-        $rightSelect.children().each(function(){
-          var $option = jQuery(this);
-
-          //inverse selection
-          if ($option.attr('selected') === true || $option.attr('selected') === 'selected') {
-            $option.removeAttr('selected');
-          }else{
-            $option.attr('selected', 'selected');
-          }
-        });
-        moveSelectOptions('left');
-
-        //select and move options from left to right
-        $leftSelect.val(values);
-        moveSelectOptions('right');
-
-        //reset filters
-        $leftSearch.val(currentLeftFilterText);
-        filterSelect(currentLeftFilterText, 'left');
-
-        $rightSearch.val(currentRightFilterText);
-        filterSelect(currentRightFilterText, 'right');
-      }
-
-
-
-      return returnArray;
-    };
+    }
 
     /**
      * Makes sure the width of the search input equals that of the selects
@@ -202,13 +340,19 @@
     function enhanceOption($option) {
       /* add events
        */
-
-      /* double click */
-      $option.dblclick(function() {
-        parent = $(this).parent()[0];
-        target = parent === $leftSelect[0] ? 'right' : 'left';
-        moveSelectOptions(target);
-      });
+      if (plugin.settings.type === 'multiple') {
+        /* double click */
+        $option.dblclick(function() {
+          var parent = $(this).parent()[0];
+          var target = parent === $leftSelect[0] ? 'right' : 'left';
+          moveSelectOptions(target);
+        });
+      } else {
+        /* click */
+        $option.click(function() {
+          $leftSearch.val(jQuery(this).text());
+        });
+      }
     }
 
     /**
@@ -380,9 +524,12 @@
      * Filters the option in a select
      * @param string text The text used as filter
      * @param string target The target select
+     * @param boolean selectFirst If true, the first option in the filtered list
+     *                              will bee selected (default: false)
      **/
-    function filterSelect(text, target) {
-      var optionsData, $targetSelect, value, option;
+    function filterSelect(text, target, selectFirst) {
+      selectFirst = selectFirst === undefined ? false : selectFirst;
+      var optionsData, $targetSelect, option;
       var search = $.trim(text);
       var regex = new RegExp(search,'gi');
 
@@ -397,19 +544,24 @@
       $.each(optionsData, function(i) {
         var option = optionsData[i];
         if(option.text.match(regex) !== null) {
-          $option = $('<option>').text(option.text).val(option.value).data('multicombo.index',option.index);
+          var $option = $('<option>').text(option.text).val(option.value).data('multicombo.index',option.index);
 
           /* enhance it, add it */
           enhanceOption($option);
           addSelectOption($option, target, true);
         }
       });
+
+      if (selectFirst === true) {
+        $targetSelect.children().first().attr('selected', 'selected');
+      }
+
     }
 
     /* init the plugin */
     plugin.init();
   };
-  
+
   $.fn.multicombo = function(options) {
     return this.each(function() {
       if (undefined === $(this).data('multicombo')) {
