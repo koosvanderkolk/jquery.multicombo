@@ -1,5 +1,5 @@
 /**
- * jQuery Multicombo v0.1 - by @koosvdkolk
+ * jQuery Multicombo v0.2 - by @koosvdkolk
  *
  * Transforms select lists into searchable combo lists
  *
