@@ -55,6 +55,8 @@
         initGuiMultiple();
       } else {
         plugin.settings.type = 'single';
+        plugin.settings.defaultSelectSize = 10;
+        plugin.settings.expandedSelectSize = 20;
         initGuiSingle();
       }
     };
@@ -199,11 +201,21 @@
 
       /* search focus event */
       $leftSearch.bind('focus', function(){
+        $leftSearch.data('multicombo.hasFocus', true);
         $selectRow.show();
+      });
+
+      /* left search click event */
+      $leftSearch.bind('click', function(){
+        if ($leftSearch.data('multicombo.hasFocus') === false) {
+          $selectRow.toggle();
+        }
       });
 
       /* search blur event */
       $leftSearch.bind('blur', function(){
+        $leftSearch.data('multicombo.hasFocus', false);
+
         /* get selected option value */
         $leftSearch.val($leftSelect.children(':selected').text());
 
@@ -213,6 +225,16 @@
         }
       });
 
+      /* left select keyup */
+      $leftSelect.bind('keyup', function(e){
+        if (e.keyCode === 13 || e.keyCode === 3) {
+          /* get selected option value */
+          $leftSearch.val($leftSelect.children(':selected').text());
+          $selectRow.hide();
+        }
+      });
+
+      /* set flag if select has focus */
       $leftSelect.bind('hover', function(){
         $leftSearch.data('multicombo.usingSelect', true);
       });
