@@ -43,6 +43,7 @@
 
     var $leftExpandButton = $('<span style="width: 20px"><img src="'+plugin.settings.layoutFolder+'maximize.gif" /></span>');
     var $rightExpandButton = $leftExpandButton.clone();
+    var $openListButton;
 
     var $selectRow;
 
@@ -57,6 +58,7 @@
         plugin.settings.type = 'single';
         plugin.settings.defaultSelectSize = 10;
         plugin.settings.expandedSelectSize = 20;
+        $openListButton = $('<span style="width: 20px"><img src="'+plugin.settings.layoutFolder+'open_list.png" /></span>'); 
         initGuiSingle();
       }
     };
@@ -143,7 +145,7 @@
 
       /* row with search inputs */
       $tr = jQuery('<div></div>');
-      $tr.append( $('<div></div>').append($leftSearch, $leftExpandButton) );
+      $tr.append( $('<div></div>').append($leftSearch, $openListButton) );
 
       $tbody.append($tr);
 
@@ -197,6 +199,11 @@
           filterSelect($(this).val(), 'left', true);
           $leftSearch.data('multicombo.usingSelect', false);
         }
+      });
+      
+      /* open list button */
+      $openListButton.bind('click', function(){
+        $selectRow.toggle();
       });
 
       /* search focus event */
