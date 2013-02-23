@@ -55,8 +55,7 @@
         plugin.settings.type = 'multiple';
         initGuiMultiple();
       } else {
-        plugin.settings.type = 'single';
-        plugin.settings.defaultSelectSize = 10;
+        plugin.settings.type = 'single';        
         plugin.settings.expandedSelectSize = 20;
         $openListButton = $('<span style="width: 20px"><img src="'+plugin.settings.layoutFolder+'open_list.png" /></span>'); 
         initGuiSingle();
@@ -131,6 +130,7 @@
      **/
     function initGuiSingle () {
       var $tr;
+      var numberOfOptions = $leftSelect.children().length;
 
       /* create ui
       */
@@ -145,7 +145,7 @@
 
       /* row with search inputs */
       $tr = jQuery('<div></div>');
-      $tr.append( $('<div></div>').append($leftSearch, $openListButton) );
+      $tr.append( $('<div></div>').append($leftSearch, $openListButton, $leftExpandButton) );
 
       $tbody.append($tr);
 
@@ -157,15 +157,16 @@
       /* append table and do some settings */
       $element.append($table);
 
+      /* store width */
+      plugin.settings.selectContainerWidth = $tr.width();
+         
       //layout of selects
       $leftSelect.attr({
         "multiple": "",
-        "size": plugin.settings.defaultSelectSize
+        "size": (numberOfOptions <= plugin.settings.expandedSelectSize ? numberOfOptions : plugin.settings.expandedSelectSize)
       });
 
-      //store width of select
-      plugin.settings.selectWidth = $leftSelect.width();
-
+              
       //set width of search box;
       resetSearchWidth();
 
@@ -321,7 +322,7 @@
       });
 
       //store width of select
-      plugin.settings.selectWidth = $leftSelect.width();
+      plugin.settings.selectContainerWidth = $leftSelect.parent().width();
 
       //set width of search box;
       resetSearchWidth();
@@ -369,8 +370,12 @@
      * Makes sure the width of the search input equals that of the selects
      **/
     function resetSearchWidth () {
-      $leftSearch.width($leftSelect.width()-$leftExpandButton.width()-5);
-      $rightSearch.width($rightSelect.width()-$rightExpandButton.width()-5);
+      if (plugin.settings.type === 'multiple') {
+        $leftSearch.width($leftSelect.width()-$leftExpandButton.width());
+        $rightSearch.width($rightSelect.width()-$rightExpandButton.width());  
+      } else {
+        $leftSearch.width($leftSelect.width()-$leftExpandButton.width()-$openListButton.width()-5);
+      }       
     }
 
     /**
@@ -529,37 +534,86 @@
     /**
      * Resizes the select
      * @param string target Name of the select: 'left' or 'right'
+     * @param object options  {"toggle": If true, the size will be toggled, 
+     *                                    if false, the select size will just 
+     *                                    be re-calculated,
+     *                         "sizeAttr" : If true, the select's size attribute
+     *                                        will be affected,
+     *                         "width": If true, the select's width will be 
+     *                                    affected}                              
      **/
-    function resizeSelect(target) {
+    function resizeSelect(target, options) {
+      var defaultOptions = {
+         "toggle": true,
+         "sizeAttr": true,
+         "width": true
+      }
+      
+      if (options === undefined){
+        options = {};
+      }      
+      options = jQuery.extend({}, defaultOptions, options);        
+      
       var expand;
+      var newSize;
       var selectData = getSelect(target);
       var $targetSelect = selectData.targetSelect;
       var $sourceSelect = selectData.sourceSelect;
-
-      if ($targetSelect.data('multicombo.expanded')===true) {
-        expand = false;
-      } else {
-        expand = true;
+      var numberOfOptions = $targetSelect.children().length;
+      
+      if (options.toggle === true) {
+        if ($targetSelect.data('multicombo.expanded')===true) {
+          expand = false;
+        } else {
+          expand = true;
+        }
+      }else{
+        expand = $targetSelect.data('multicombo.expanded');
       }
-
-      var deltaWidth = plugin.settings.selectWidth / 2;
+      
+      
+      var deltaWidth = plugin.settings.selectContainerWidth / 2;
       if (expand === true) {
-        $targetSelect.attr("size", plugin.settings.expandedSelectSize);
-        $sourceSelect.attr("size", plugin.settings.expandedSelectSize);
-        $targetSelect.width($targetSelect.width()+deltaWidth);
-        $sourceSelect.width($sourceSelect.width()-deltaWidth);
+        if (options.sizeAttr === true) {
+          if (plugin.settings.type === 'single') {
+            newSize = (numberOfOptions <= plugin.settings.expandedSelectSize ? numberOfOptions : plugin.settings.expandedSelectSize);
+          } else {
+            newSize =  plugin.settings.expandedSelectSize;
+          }
+          
+          $targetSelect.attr("size", newSize);
+          $sourceSelect.attr("size", newSize);
+        }
+        
+        if (options.width === true) {
+          $targetSelect.width($targetSelect.width()+deltaWidth);
+          $sourceSelect.width($sourceSelect.width()-deltaWidth);
+        }         
 
         $targetSelect.data('multicombo.expanded', true);
-      }else{
-        $targetSelect.attr("size", plugin.settings.defaultSelectSize);
-        $sourceSelect.attr("size", plugin.settings.defaultSelectSize);
-        $targetSelect.width($targetSelect.width()-deltaWidth);
-        $sourceSelect.width($sourceSelect.width()+deltaWidth);
+      }else{  
+        if (options.sizeAttr === true) {    
+          if (plugin.settings.type === 'single') {
+            newSize = (numberOfOptions <= plugin.settings.expandedSelectSize ? numberOfOptions : plugin.settings.expandedSelectSize);
+          } else {
+            newSize =  plugin.settings.defaultSelectSize;
+          }
+          
+          $targetSelect.attr("size", newSize);
+          $sourceSelect.attr("size", newSize);
+        }
+        
+        if (options.width === true) {
+          $targetSelect.width($targetSelect.width()-deltaWidth);
+          $sourceSelect.width($sourceSelect.width()+deltaWidth);
+        }  
 
         $targetSelect.data('multicombo.expanded', false);
       }
 
-      resetSearchWidth();
+      if (options.width === true) {
+        resetSearchWidth();
+      } 
     }
 
     /**
@@ -597,7 +651,14 @@
       if (selectFirst === true) {
         $targetSelect.children().first().attr('selected', 'selected');
       }
-
+      
+      if (plugin.settings.type === 'single') {
+        resizeSelect('left', {
+         "toggle": false,
+         "sizeAttr": true,
+         "width": false
+        });
+      }   
     }
 
     /* init the plugin */
