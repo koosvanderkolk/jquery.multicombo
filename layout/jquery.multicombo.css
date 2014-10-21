@@ -1,0 +1,40 @@
+/*
+    Document   : jquery.multicombo
+    Created on : 24-apr-2013, 11:58:33
+    Author     : Koos van der Kolk
+    Description:
+        Style the jquery.multicombos
+*/
+
+div.multicombo{
+  text-align: center;
+}
+
+div.multicombo select {
+  width: 300px;
+}
+
+table.example {
+  text-align: center;
+}
+
+table.example td {
+  padding: 20px;
+  border: 1px #ccc dotted;
+  vertical-align: top;
+}
+
+div.multicombo table td {
+  padding: 2px;
+  border: 0;
+  text-align: center;
+}
+
+div.multicombo select.multicomboLeftSelect {
+  background-color: #E3E3E3;
+}
+
+div.multicombo.busy, div.multicombo.busy select, div.multicombo.busy input, div.multicombo.busy button {
+  opacity: 0.5;
+  cursor: wait;
+}

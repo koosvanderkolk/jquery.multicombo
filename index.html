@@ -7,58 +7,50 @@
       body {
         font-family: Verdana;
       }
-      div.multicombo{
-        text-align: center;
-        display: inline-block;
-        background-color: #eee;
-        border: 1px solid #ccc;
-      }
-      div.multicombo select {
-        width: 300px;
-      }
 
-      table.example {
-        text-align: center;
-      }
-
-      table.example td {
-        padding: 20px;
-        border: 1px #ccc dotted;
-        vertical-align: top;
-      }
-
-      div.multicombo table td {
-        padding: 2px;
-        border: 0;
-      }
-
-      div.multicombo div{
-        padding: 1px;
-      }
 
       div.example {
         background-color: #ddd;
         float: left;
       }
     </style>
+    <link type="text/css" rel="stylesheet" href="layout/jquery.multicombo.css" />
     <script src="http://code.jquery.com/jquery-1.7.2.min.js"></script>
     <script src="behavior/jquery.multicombo.js"></script>
     <script>
-      jQuery(document).ready(function(){
-        jQuery('.multicombo').multicombo({"layoutFolder": "layout/"});
+      jQuery(document).ready(function() {
+        var options = {"layoutFolder": "layout/"};
+
+        jQuery('#multiplecombo').multicombo(options);
+        jQuery('#singlecombo').multicombo(options);
+
+        /*
+         jQuery('#singlecombo').data('multicombo').val('Angola');
+         jQuery('#singlecombo').data('multicombo').destroy();
+
+         jQuery('#multiplecombo').data('multicombo').val(['Angola', 'Antarctica']);
+         jQuery('#multiplecombo').data('multicombo').destroy();
+         */
+              $('#but').click(function(){
+         console.log( jQuery('#singlecombo').data('multicombo').text());
+         console.log( jQuery('#multiplecombo').data('multicombo').text());
+         
+         console.log( jQuery('#singlecombo').data('multicombo').val());
+         console.log( jQuery('#multiplecombo').data('multicombo').val());
+         });
       });
     </script>
+
   </head>
 
   <body>
     <h1>jQuery multicombo - examples</h1>
     <p>Features:</p>
     <ul>
-      <li>Searchable</li>
-      <li>List can be expanded by pressing <img src="layout/maximize.gif" /></li>
+      <li>Searchable</li>      
       <li>Move options by double click</li>
       <li>Order of options is preserved</li>
-    </ul>
+    </ul>    
     <div class="example">
       <table class="example">
         <thead>
@@ -317,7 +309,7 @@
               </select>
             </td>
             <td>
-              <select  id="a" class="multicombo">
+              <select  id="singlecombo">
                 <option value="Afghanistan">Afghanistan</option>
                 <option value="Albania">Albania</option>
                 <option value="Algeria">Algeria</option>
@@ -806,7 +798,7 @@
               </select>
             </td>
             <td>
-              <select class="multicombo" multiple="multiple">
+              <select id="multiplecombo" multiple="multiple">
                 <option value="Afghanistan">Afghanistan</option>
                 <option value="Albania">Albania</option>
                 <option value="Algeria">Algeria</option>
@@ -1047,10 +1039,12 @@
                 <option value="Zambia">Zambia</option>
                 <option value="Zimbabwe">Zimbabwe</option>
               </select>
+              <button type="button" id="but">Log values/text to console</button>
             </td>
           </tr>
         </tbody>
       </table>
+      
     </div>
   </body>
 </html>

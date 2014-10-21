@@ -1,5 +1,5 @@
 /**
- * jQuery Multicombo v0.2 - by @koosvdkolk
+ * jQuery Multicombo v0.4 - by @koosvdkolk
  **/
 Transforms select lists into searchable combo lists
 
@@ -26,6 +26,6 @@ Where options (optional) is an object:
 }
 
  
-Copyright (c) 2013 Koos van der Kolk https://github.com/koosvanderkolk
+Copyright (c) 2013-2014 Koos van der Kolk https://github.com/koosvanderkolk
 Dual licensed under the MIT and GPL licenses (same as jQuery).
 http://docs.jquery.com/License
