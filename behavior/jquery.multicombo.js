@@ -1,5 +1,5 @@
 /**
- * jQuery Multicombo v0.4 - by @koosvdkolk
+ * jQuery Multicombo v0.41 - by @koosvdkolk
  *
  * Transforms select lists into searchable combo lists
  *
@@ -13,6 +13,7 @@
   "use strict"; //ECMA5 strict mode
 
   $.multicombo = function (select, options) {
+    var startTimestamp = new Date().getTime();
     var defaults = {
       "defaultSelectSize": 5,
       "expandedSelectSize": 15,
@@ -55,6 +56,9 @@
     /* selects */
     gui.leftSelect = $(select);
     gui.rightSelect = $('<select></select>');
+    gui.leftSelectParent = undefined;
+    gui.rightSelectParent = undefined;
+
 
     /* search inputs */
     gui.leftSearch = $('<input type="text" />');
@@ -147,6 +151,7 @@
         if (plugin.settings.type === 'multiple') {
           var valFunction = function () {
             /* multiple */
+            detachSelects();
 
             //clear filters
             currentLeftFilterText = gui.leftSearch.val();
@@ -182,11 +187,13 @@
 
             gui.container.removeClass('busy');
             gui.container.data('valfunction', null);
+
+            attachSelects();
           };
 
           /* lazy loading or not? */
 
-          if (plugin.settings.lazyLoad === true && totalNumberOfOptions > 100) {
+          if (plugin.settings.lazyLoad === true && totalNumberOfOptions > 200) {
             gui.container.data('valfunction', valFunction);
             gui.container.one('mouseenter', gui.container.data('valfunction'));
             gui.container.addClass('busy');
@@ -345,6 +352,9 @@
       /* row with select */
       gui.selectRow.append($('<div></div>').append(gui.leftSelect));
       $tbody.append(gui.selectRow);
+
+      gui.leftSelectParent = gui.leftSelect.parent();
+      gui.rightSelectParent = gui.rightSelect.parent();
 
       /* append table and do some settings */
       gui.container.append($table);
@@ -518,6 +528,9 @@
       $tr.append($('<td></td>').append(gui.rightSelect));
       $tbody.append($tr);
 
+      gui.leftSelectParent = gui.leftSelect.parent();
+      gui.rightSelectParent = gui.rightSelect.parent();
+
       /* append table and do some settings */
       gui.container.append($table);
 
@@ -647,7 +660,7 @@
 
     /**
      * Moves selected options to the other select list
-     * @param {string target} The target select: 'left' or 'right'
+     * @param {string} target The target select: 'left' or 'right'
      **/
     function moveOptions(target) {
 
@@ -753,7 +766,10 @@
     function fillSelect(option, target, sort) {
       var selectData = getSelect(target);
       var $targetSelect = selectData.targetSelect;
+      var $parent = $targetSelect.parent();
+
       $targetSelect.append(option);
+
 
       if (sort === undefined || sort === true) {
         sortSelect(target);
@@ -856,6 +872,22 @@
     }
 
     /**
+     * Detaches the selects from the DOM (increases performance)
+     */
+    function detachSelects() {
+      gui.leftSelect.detach();
+      gui.rightSelect.detach();
+    }
+
+    /**
+     * Attaches the selects to the DOM
+     */
+    function attachSelects() {
+      gui.leftSelectParent.append(gui.leftSelect);
+      gui.rightSelectParent.append(gui.rightSelect);
+    }
+
+    /**
      * Filters the option in a select
      * @param {string} text The text used as filter
      * @param {string} target The target select
@@ -877,6 +909,7 @@
       window.clearTimeout(filterTimeout);
 
       var filterFunction = function () {
+        detachSelects();
         var search, regex;
         var optionsDataObj, $targetSelect;
         var dataObjProp;
@@ -922,6 +955,8 @@
             "width": false
           });
         }
+
+        attachSelects();
       };
 
       //create new timeout
